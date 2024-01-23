@@ -1,8 +1,9 @@
 import { validationResult } from "express-validator";
 import { jsonGenerate } from "../utils/helper.js";
-import { StatusCode } from "../utils/constants.js";
+import { JWT_TOKEN_SECRET, StatusCode } from "../utils/constants.js";
 import bcrypt from 'bcrypt';
-
+import User from "../models/User.js";
+import Jwt from 'jsonwebtoken';
 
 const Register = async(req,res) => {
 
@@ -13,7 +14,20 @@ const Register = async(req,res) => {
         const salt = await bcrypt.genSalt(10)
         const hashPassword = await bcrypt.hash(password,salt);
 
-        // password = hashPassword;
+        const hashedPassword = hashPassword;
+
+
+
+        const userExist=await User.findOne({ $or: [{
+            email:email
+        },{
+            username:username
+        }]});
+
+        if(userExist){
+            return res.json(jsonGenerate(StatusCode.UNPROCESSABLE_ENTITY,
+                "User or Email allreday exists"))
+        }
 
         // save value in database
         try{
@@ -23,7 +37,11 @@ const Register = async(req,res) => {
                 password:hashPassword,
                 username:username
             })
-            res.json(jsonGenerate(StatusCode.SUCCESS,"Registration successfully", result));
+
+
+            const token = Jwt.sign({userId:result._id},JWT_TOKEN_SECRET);
+            
+            res.json(jsonGenerate(StatusCode.SUCCESS,"Registration successfully", {userId:result._id, token:token}));
         }catch(error){
             console.log(error)
 

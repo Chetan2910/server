@@ -18,7 +18,7 @@ const userSchema = mongoose.Schema({
     },
     email:{
         type: 'string',
-        min:3,
+        min:7,
         max:32,
         required: true
     },
